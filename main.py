@@ -62,9 +62,9 @@ if 'mk' not in st.session_state: st.session_state['mk'] = 0
 mk = st.session_state['mk']
 
 # --- Listas de Dados ---
-delegados = ["Adilson Antonio Marcondes dos Santos", "Adriane Goncalves", "Anisio Galdioli", "Benedito Carlos dos Santos Martins", "Cesar Aparecido Vieira da Silva", "Daniel Souza Baptista de Castro", "Ernani Ronaldo Giannico Braga", "Fabio Germano Figueiredo Cabett", "Flavia Maria Rocha Rollo", "Francisco Sannini Neto", "Hugo Parreiras de Macedo", "Jose Marcelo Silva Hial", "Leonardo da Costa Ferreira", "Marcelo Vieira Cavalcante", "Mario Celso Ribeiro Senne", "Paulo Roberto Gruschka Castilho", "Paulo Sergio Barbosa", "Pedro Rossati", "Rodrigo Jose Goes Ribeiro", "Sergio Lucas Adler Guedes de Oliveira", "Vania Idalira Z. de Oliveira"]
+delegados = ["Adilson Antonio Marcondes dos Santos", "Adriane Goncalves", "Anisio Galdioli", "Benedito Carlos dos Santos Martins", "Cesar Aparecido Vieira da Silva", "Daniel Souza Baptista de Castro", "Ernani Ronaldo Giannico Braga", "Fabio Germano Figueiredo Cabett", "Flavia Maria Rocha Rollo", "Francisco Sannini Neto", "Hugo Parreiras de Macedo", "Jose Marcelo Silva Hial", "Leonardo da Costa Ferreira", "Marcelo Vieira Cavalcante", "Mario Celso Ribeiro Senne", "Paulo Roberto Gruschka Castilho", "Paulo Sergio Barbosa", "Pedro Rossati", "Rodrigo Jose Goes Ribeiro", "Sergio Lucas Adler Guedes de Oliveira", "Vania Idalira Z. de Oliveira", "Outro..."]
 peritos = ["Alexandre Rabello de Oliveira", "Bruna Fernandes Nogueira", "Claude Thiago Arrabal", "Jéssica Pereira Gonçalves", "Luiz Fausto Prado Vasques", "Marcelo Mourão Dantas", "Márcio Steinmetz Soares", "Sarah Costa Teixeira"]
-cidades = ["Aparecida", "Cachoeira Paulista", "Canas", "Cunha", "Guaratinguetá", "Lorena", "Piquete", "Potim", "Roseira"]
+cidades = ["Aparecida", "Cachoeira Paulista", "Canas", "Cunha", "Guaratinguetá", "Lorena", "Piquete", "Potim", "Roseira", "Outra..."]
 dps_por_cidade = {"Aparecida": ["DEL.POL.APARECIDA"], "Canas": ["DEL.POL.CANAS"], "Cachoeira Paulista": ["DEL.POL.CACHOEIRA PAULISTA"], "Cunha": ["DEL.POL.CUNHA"], "Guaratinguetá": ["01º D.P. GUARATINGUETA", "02º D.P. GUARATINGUETA", "DEL.SEC.GUARATINGUETA PLANTÃO", "DISE- DEL.SEC.GUARATINGUETA"], "Lorena": ["01º D.P. LORENA", "02º D.P. LORENA", "DEL.POL.LORENA"], "Piquete": ["DEL.POL.PIQUETE"], "Potim": ["DEL.POL.POTIM"], "Roseira": ["DEL.POL.ROSEIRA"]}
 
 # --- INTERFACE ---
@@ -72,7 +72,17 @@ st.title("Gerador de Laudos - Vistoria")
 
 st.header("1. Cabeçalho e Identificação")
 colBO1, colBO2 = st.columns(2)
-with colBO1: bo_input = st.text_input("Número do BO:", value="", placeholder="Ex: LT0644", key=f"bo_{mk}").upper()
+with colBO1: 
+    bo_input = st.text_input("Número do BO:", value="", placeholder="Ex: LT0644", key=f"bo_{mk}").upper()
+    # Lógica de cor da borda do BO (Verde/Vermelho)
+    if bo_input:
+        if re.match(r"^[A-Z]{2}\d{4}$", bo_input):
+            st.markdown("""<style>div:has(input[aria-label="Número do BO:"]) { border: 2px solid #28a745 !important; border-radius: 8px; }</style>""", unsafe_allow_html=True)
+            st.success("✅ Formato válido")
+        else:
+            st.markdown("""<style>div:has(input[aria-label="Número do BO:"]) { border: 2px solid #dc3545 !important; border-radius: 8px; }</style>""", unsafe_allow_html=True)
+            st.error("❌ Formato inválido. Padrão: 2 letras e 4 números (Ex: LT0644)")
+
 with colBO2: bo_ano = st.text_input("Ano do BO:", value="2026", max_chars=4, key=f"ano_{mk}")
 
 data_selecionada = st.date_input("Data do Laudo:", format="DD/MM/YYYY", key=f"data_{mk}")
@@ -81,14 +91,32 @@ data_extenso = f"{data_selecionada.day} de {meses[data_selecionada.month]} de {d
 
 objetivos_selecionados = st.multiselect("Objetivo da Perícia:", ["Vistoria", "Fotografação", "Constatação de Danos", "Verificação dos Sistemas de Segurança", "Adulteração de Sinais Identificadores"], default=["Vistoria", "Constatação de Danos"], key=f"obj_{mk}")
 perito_selecionado = st.selectbox("Perito Criminal:", peritos, index=peritos.index("Claude Thiago Arrabal"), key=f"per_{mk}")
-delegado_selecionado = st.selectbox("Autoridade Policial:", delegados, index=delegados.index("Adilson Antonio Marcondes dos Santos"), key=f"del_{mk}")
+
+del_sel = st.selectbox("Autoridade Policial:", delegados, index=delegados.index("Adilson Antonio Marcondes dos Santos") if "Adilson Antonio Marcondes dos Santos" in delegados else 0, key=f"del_sel_{mk}")
+if del_sel == "Outro...":
+    delegado_selecionado = st.text_input("Digite o nome da Autoridade Policial:", key=f"del_dig_{mk}")
+else:
+    delegado_selecionado = del_sel
 
 colC1, colC2 = st.columns(2)
-with colC1: cidade_selecionada = st.selectbox("Cidade:", cidades, index=cidades.index("Guaratinguetá"), key=f"cid_{mk}")
+with colC1: 
+    cid_sel = st.selectbox("Cidade:", cidades, index=cidades.index("Guaratinguetá") if "Guaratinguetá" in cidades else 0, key=f"cid_sel_{mk}")
+    if cid_sel == "Outra...":
+        cidade_selecionada = st.text_input("Digite o nome da Cidade:", key=f"cid_dig_{mk}")
+    else:
+        cidade_selecionada = cid_sel
+
 with colC2:
-    opcoes_dp = dps_por_cidade[cidade_selecionada]
-    index_padrao = opcoes_dp.index("DEL.SEC.GUARATINGUETA PLANTÃO") if "DEL.SEC.GUARATINGUETA PLANTÃO" in opcoes_dp else 0
-    delegacia_selecionada = st.selectbox("Delegacia:", opcoes_dp, index=index_padrao, key=f"dp_{mk}")
+    if cid_sel == "Outra...":
+        delegacia_selecionada = st.text_input("Digite o nome da Delegacia:", key=f"dp_dig_{mk}")
+    else:
+        opcoes_dp = dps_por_cidade[cid_sel] + ["Outra..."]
+        index_padrao = opcoes_dp.index("DEL.SEC.GUARATINGUETA PLANTÃO") if "DEL.SEC.GUARATINGUETA PLANTÃO" in opcoes_dp else 0
+        dp_sel = st.selectbox("Delegacia:", opcoes_dp, index=index_padrao, key=f"dp_sel_{mk}")
+        if dp_sel == "Outra...":
+            delegacia_selecionada = st.text_input("Digite o nome da Delegacia:", key=f"dp_dig_esp_{mk}")
+        else:
+            delegacia_selecionada = dp_sel
 
 st.header("2. Veículo")
 colT1, colT2, colT3 = st.columns(3)
