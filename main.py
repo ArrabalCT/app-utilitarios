@@ -62,8 +62,8 @@ if 'mk' not in st.session_state: st.session_state['mk'] = 0
 mk = st.session_state['mk']
 
 # --- Listas de Dados ---
-delegados = ["Adilson Antonio Marcondes dos Santos", "Adriane Goncalves", "Anisio Galdioli", "Benedito Carlos dos Santos Martins", "Cesar Aparecido Vieira da Silva", "Daniel Souza Baptista de Castro", "Ernani Ronaldo Giannico Braga", "Fabio Germano Figueiredo Cabett", "Flavia Maria Rocha Rollo", "Francisco Sannini Neto", "Hugo Parreiras de Macedo", "Jose Marcelo Silva Hial", "Leonardo da Costa Ferreira", "Marcelo Vieira Cavalcante", "Mario Celso Ribeiro Senne", "Paulo Roberto Gruschka Castilho", "Paulo Sergio Barbosa", "Pedro Rossati", "Rodrigo Jose Goes Ribeiro", "Sergio Lucas Adler Guedes de Oliveira", "Vania Idalira Z. de Oliveira", "Outro..."]
-peritos = ["Alexandre Rabello de Oliveira", "Bruna Fernandes Nogueira", "Claude Thiago Arrabal", "Jéssica Pereira Gonçalves", "Luiz Fausto Prado Vasques", "Marcelo Mourão Dantas", "Márcio Steinmetz Soares", "Sarah Costa Teixeira"]
+delegados = ["Adilson Antonio Marcondes dos Santos", "Adriane Goncalves", "Anisio Galdioli", "Cesar Aparecido Vieira da Silva", "Daniel Souza Baptista de Castro", "Ernani Ronaldo Giannico Braga", "Fabio Germano Figueiredo Cabett", "Flavia Maria Rocha Rollo", "Francisco Sannini Neto", "Hugo Parreiras de Macedo", "Jose Marcelo Silva Hial", "Leonardo da Costa Ferreira", "Marcelo Vieira Cavalcante", "Mario Celso Ribeiro Senne", "Paulo Roberto Gruschka Castilho", "Paulo Sergio Barbosa", "Pedro Rossati", "Sergio Lucas Adler Guedes de Oliveira", "Vania Idalira Z. de Oliveira", "Outro..."]
+peritos = ["Alexandre Rabello de Oliveira", "Bruna Fernandes Nogueira", "Claude Thiago Arrabal", "Jéssica Pereira Gonçalves", "Júlia Soares Melo", "Luiz Fausto Prado Vasques", "Marcelo Mourão Dantas", "Márcio Steinmetz Soares", "Sarah Costa Teixeira", "Ruan Carvalho de Souza"]
 cidades = ["Aparecida", "Cachoeira Paulista", "Canas", "Cunha", "Guaratinguetá", "Lorena", "Piquete", "Potim", "Roseira", "Outra..."]
 dps_por_cidade = {"Aparecida": ["DEL.POL.APARECIDA"], "Canas": ["DEL.POL.CANAS"], "Cachoeira Paulista": ["DEL.POL.CACHOEIRA PAULISTA"], "Cunha": ["DEL.POL.CUNHA"], "Guaratinguetá": ["01º D.P. GUARATINGUETA", "02º D.P. GUARATINGUETA", "DEL.SEC.GUARATINGUETA PLANTÃO", "DISE- DEL.SEC.GUARATINGUETA"], "Lorena": ["01º D.P. LORENA", "02º D.P. LORENA", "DEL.POL.LORENA"], "Piquete": ["DEL.POL.PIQUETE"], "Potim": ["DEL.POL.POTIM"], "Roseira": ["DEL.POL.ROSEIRA"]}
 
@@ -367,3 +367,4 @@ with c2:
         st.session_state.clear()
         st.session_state['mk'] = current_mk + 1
         st.rerun()
+
