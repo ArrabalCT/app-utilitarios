@@ -155,9 +155,10 @@ for regiao, lista in pecas_padrao.items():
     for peca in todas:
         st.markdown(f"**Detalhes: {peca}**")
         c1, c2, c3 = st.columns(3)
-        with c1: t = st.multiselect("Dano:", ["Amolgamento", "Fratura", "Atritamento", "Quebra"], key=f"t_{peca}_{mk}")
-        with c2: o = st.multiselect("Sentido:", ["Da frente para trás", "De trás para a frente", "Da esquerda para a direita", "Da direita para a esquerda", "De cima para baixo", "De baixo para cima", "De fora para dentro", "De dentro para fora"], key=f"o_{peca}_{mk}")
-        with c3: a = st.multiselect("Altura:", ["Terço superior", "Terço médio", "Terço inferior"], key=f"a_{peca}_{mk}")
+        # CORREÇÃO: Chaves agora incluem o nome da região para evitar duplicidade
+        with c1: t = st.multiselect("Dano:", ["Amolgamento", "Fratura", "Atritamento", "Quebra"], key=f"t_{peca}_{regiao}_{mk}")
+        with c2: o = st.multiselect("Sentido:", ["Da frente para trás", "De trás para a frente", "Da esquerda para a direita", "Da direita para a esquerda", "De cima para baixo", "De baixo para cima", "De fora para dentro", "De dentro para fora"], key=f"o_{peca}_{regiao}_{mk}")
+        with c3: a = st.multiselect("Altura:", ["Terço superior", "Terço médio", "Terço inferior"], key=f"a_{peca}_{regiao}_{mk}")
         regioes_detalhes[regiao][peca] = {"tipo": t, "ori": o, "alt": a}
 
 st.markdown("##### Componentes Adicionais")
@@ -350,11 +351,13 @@ with c1:
         p_paginas.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         doc.add_paragraph("\n")
         
-        p_assinatura = doc.add_paragraph(); p_assinatura.paragraph_format.space_after = p_assinatura.paragraph_format.space_before = Pt(0)
+        p_assinatura = doc.add_paragraph()
+        p_assinatura.paragraph_format.space_after = p_assinatura.paragraph_format.space_before = Pt(0)
         p_assinatura.add_run(perito_selecionado).bold = True
         p_assinatura.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        p_cargo = doc.add_paragraph("Perito Criminal Relator"); p_cargo.paragraph_format.space_after = p_cargo.paragraph_format.space_before = Pt(0)
+        p_cargo = doc.add_paragraph("Perito Criminal Relator")
+        p_cargo.paragraph_format.space_after = p_cargo.paragraph_format.space_before = Pt(0)
         p_cargo.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         buf_doc = io.BytesIO(); doc.save(buf_doc); buf_doc.seek(0)
@@ -367,4 +370,3 @@ with c2:
         st.session_state.clear()
         st.session_state['mk'] = current_mk + 1
         st.rerun()
-
