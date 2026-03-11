@@ -2,6 +2,7 @@ import streamlit as st
 from docx import Document
 from docx.shared import Inches, Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.shared import OxmlElement
 from docx.oxml.ns import qn
 import io
@@ -74,14 +75,6 @@ st.header("1. Cabeçalho e Identificação")
 colBO1, colBO2 = st.columns(2)
 with colBO1: 
     bo_input = st.text_input("Número do BO:", value="", placeholder="Ex: LT0644", key=f"bo_{mk}").upper()
-    # Lógica de cor da borda do BO (Verde/Vermelho)
-    if bo_input:
-        if re.match(r"^[A-Z]{2}\d{4}$", bo_input):
-            st.markdown("""<style>div:has(input[aria-label="Número do BO:"]) { border: 2px solid #28a745 !important; border-radius: 8px; }</style>""", unsafe_allow_html=True)
-            st.success("✅ Formato válido")
-        else:
-            st.markdown("""<style>div:has(input[aria-label="Número do BO:"]) { border: 2px solid #dc3545 !important; border-radius: 8px; }</style>""", unsafe_allow_html=True)
-            st.error("❌ Formato inválido. Padrão: 2 letras e 4 números (Ex: LT0644)")
 
 with colBO2: bo_ano = st.text_input("Ano do BO:", value="2026", max_chars=4, key=f"ano_{mk}")
 
@@ -142,25 +135,30 @@ pecas_padrao = {
     "Teto": ["Teto", "Rack/Longarina"]
 }
 
+# --- 3. Constatações (CORRIGIDO PARA EVITAR CHAVES DUPLICADAS) ---
 regioes_detalhes = {}
 for regiao, lista in pecas_padrao.items():
     st.markdown(f"##### 🚗 {regiao}")
     selecionadas = st.multiselect(f"Peças na {regiao}:", lista, key=f"sel_{regiao}_{mk}")
     outras = st.text_input(f"Outras na {regiao}:", placeholder="Ex: Friso, Cárter...", key=f"out_{regiao}_{mk}")
     
-    # Junta as peças selecionadas com as digitadas manualmente
     todas = selecionadas + [p.strip() for p in outras.split(",") if p.strip()]
     regioes_detalhes[regiao] = {}
     
     for peca in todas:
         st.markdown(f"**Detalhes: {peca}**")
         c1, c2, c3 = st.columns(3)
-        # CORREÇÃO: Chaves agora incluem o nome da região para evitar duplicidade
-        with c1: t = st.multiselect("Dano:", ["Amolgamento", "Fratura", "Atritamento", "Quebra"], key=f"t_{peca}_{regiao}_{mk}")
-        with c2: o = st.multiselect("Sentido:", ["Da frente para trás", "De trás para a frente", "Da esquerda para a direita", "Da direita para a esquerda", "De cima para baixo", "De baixo para cima", "De fora para dentro", "De dentro para fora"], key=f"o_{peca}_{regiao}_{mk}")
-        with c3: a = st.multiselect("Altura:", ["Terço superior", "Terço médio", "Terço inferior"], key=f"a_{peca}_{regiao}_{mk}")
+        with c1: 
+            t = st.multiselect("Dano:", ["Amolgamento", "Fratura", "Atritamento", "Quebra"], 
+                               key=f"t_{peca}_{regiao}_{mk}")
+        with c2: 
+            o = st.multiselect("Sentido:", ["Da frente para trás", "De trás para a frente", "Da esquerda para a direita", "Da direita para a esquerda", "De cima para baixo", "De baixo para cima", "De fora para dentro", "De dentro para fora"], 
+                               key=f"o_{peca}_{regiao}_{mk}")
+        with c3: 
+            a = st.multiselect("Altura:", ["Terço superior", "Terço médio", "Terço inferior"], 
+                               key=f"a_{peca}_{regiao}_{mk}")
         regioes_detalhes[regiao][peca] = {"tipo": t, "ori": o, "alt": a}
-
+    
 st.markdown("##### Componentes Adicionais")
 colE1, colE2 = st.columns(2)
 with colE1: 
@@ -181,7 +179,7 @@ def montar_regiao(nome, dados):
         o = f" (sentido: {', '.join(det['ori']).lower()})" if det['ori'] else ""
         linhas.append(f"{peca} com {t}{a}{o}")
     if not linhas: return ""
-    return f"- {nome}: {'; '.join(linhas[:-1]) + ' e ' + linhas[-1] if len(linhas) > 1 else linhas[0]}.\n"
+    return f"• {nome}: {'; '.join(linhas[:-1]) + ' e ' + linhas[-1] if len(linhas) > 1 else linhas[0]}.\n"
 
 # Forçando Maiúsculas para as variáveis principais do texto
 cat_str = cat_v.split(" ")[0].lower()
@@ -189,15 +187,16 @@ marca_modelo_str = mod_v.upper() if mod_v else "[MARCA/MODELO]"
 placa_str = placa.upper() if placa else "[PLACA]"
 cor_str = cor.lower() if cor else "[COR]"
 
-txt_gerado = f"Trata-se de um veículo do tipo {tipo_v.lower()}, espécie {esp_v.lower()}, categoria {cat_str}, marca/modelo {marca_modelo_str}, de cor {cor_str}, ostentando a placa {placa_str}.\n\n"
+# Texto contínuo: sem \n\n antes de "Nas inspeções..."
+txt_gerado = f"Trata-se de um veículo do tipo {tipo_v.lower()}, espécie {esp_v.lower()}, categoria {cat_str}, marca/modelo {marca_modelo_str}, de cor {cor_str}, ostentando a placa {placa_str}. "
 
 if any(regioes_detalhes.values()):
     txt_gerado += "Nas inspeções realizadas, constatou-se que a unidade apresentava avarias recentes localizadas nas seguintes regiões/peças:\n"
     for r, d in regioes_detalhes.items(): txt_gerado += montar_regiao(r, d)
 
-# Adicionando os Sistemas Elétricos de volta
-txt_gerado += f"\nQuanto aos sistemas elétricos, encontravam-se {s_ele.lower()}.\n"
-txt_gerado += f"O sistema de freios apresentou-se {s_fre.lower()}.\n"
+# Adicionando os Sistemas na mesma linha (separados por espaço em vez de \n)
+txt_gerado += f"Quanto aos sistemas elétricos, encontravam-se {s_ele.lower()}. "
+txt_gerado += f"O sistema de freios apresentou-se {s_fre.lower()}. "
 
 if not pneus:
     txt_gerado += "Os pneumáticos encontravam-se em aparente bom estado de conservação."
@@ -269,23 +268,31 @@ with c1:
         section = doc.sections[0]
         header = section.header
         for p in header.paragraphs: p.text = ""
-        table = header.add_table(rows=1, cols=3, width=Cm(16.0))
+        
+        # Ajustando a largura total da tabela para 15.5 cm para respeitar as margens
+        table = header.add_table(rows=1, cols=3, width=Cm(15.5))
         table.autofit = False
-        table.columns[0].width = Cm(2.0)
-        table.columns[1].width = Cm(12.0)
-        table.columns[2].width = Cm(2.0)
-        for cell in table.columns[0].cells: cell.width = Cm(2.0)
-        for cell in table.columns[1].cells: cell.width = Cm(12.0)
-        for cell in table.columns[2].cells: cell.width = Cm(2.0)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        
+        largura_lateral = Cm(2.2)
+        largura_meio = Cm(11.1)
+
+        table.columns[0].width = largura_lateral
+        table.columns[1].width = largura_meio
+        table.columns[2].width = largura_lateral
+        
+        for cell in table.columns[0].cells: cell.width = largura_lateral
+        for cell in table.columns[1].cells: cell.width = largura_meio
+        for cell in table.columns[2].cells: cell.width = largura_lateral
 
         p_left = table.cell(0, 0).paragraphs[0]; p_left.alignment = WD_ALIGN_PARAGRAPH.LEFT
         if os.path.exists("logo_ssp.png"): p_left.add_run().add_picture("logo_ssp.png", width=Cm(1.8))
         
         p_center = table.cell(0, 1).paragraphs[0]; p_center.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run_h1 = p_center.add_run("SECRETARIA DA SEGURANÇA PÚBLICA\nSUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA\n")
-        run_h1.font.size = Pt(11); run_h1.bold = True
+        run_h1.font.size = Pt(11); run_h1.bold = False
         run_h2 = p_center.add_run("INSTITUTO DE CRIMINALÍSTICA\n“PERITO CRIMINAL DR. OCTÁVIO EDUARDO DE BRITO ALVARENGA”\nNÚCLEO DE PERÍCIAS CRIMINALÍSTICAS DE SÃO JOSÉ DOS CAMPOS\nEQUIPE DE PERÍCIAS CRIMINALÍSTICAS DE GUARATINGUETÁ")
-        run_h2.font.size = Pt(9); run_h2.bold = True
+        run_h2.font.size = Pt(8); run_h2.bold = False
 
         p_right = table.cell(0, 2).paragraphs[0]; p_right.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         if os.path.exists("logo_ic.png"): p_right.add_run().add_picture("logo_ic.png", width=Cm(1.8))
@@ -320,9 +327,9 @@ with c1:
         for linha in texto_final.split("\n"): doc.add_paragraph(linha.strip())
             
         if st.session_state['fotos']:
-            doc.add_paragraph(" ")
+            doc.add_page_break()
             p_fotos = doc.add_paragraph()
-            run_fotos = p_fotos.add_run("REGISTO FOTOGRÁFICO:"); run_fotos.bold = True; run_fotos.font.size = Pt(14)
+            run_fotos = p_fotos.add_run("4 - REGISTRO FOTOGRÁFICO"); run_fotos.bold = True; run_fotos.font.size = Pt(14)
             adicionar_borda_inferior(p_fotos)
             
             for i, foto_data in enumerate(st.session_state['fotos']):
@@ -349,15 +356,12 @@ with c1:
         adicionar_campo_numpages(p_paginas)  
         p_paginas.add_run(" páginas, além da capa, ficando arquivada cópia digital no sistema GDL da SPTC.")
         p_paginas.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        doc.add_paragraph("\n")
         
-        p_assinatura = doc.add_paragraph()
-        p_assinatura.paragraph_format.space_after = p_assinatura.paragraph_format.space_before = Pt(0)
+        p_assinatura = doc.add_paragraph(); p_assinatura.paragraph_format.space_after = p_assinatura.paragraph_format.space_before = Pt(0)
         p_assinatura.add_run(perito_selecionado).bold = True
         p_assinatura.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        p_cargo = doc.add_paragraph("Perito Criminal Relator")
-        p_cargo.paragraph_format.space_after = p_cargo.paragraph_format.space_before = Pt(0)
+        p_cargo = doc.add_paragraph("Perito Criminal Relator"); p_cargo.paragraph_format.space_after = p_cargo.paragraph_format.space_before = Pt(0)
         p_cargo.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         buf_doc = io.BytesIO(); doc.save(buf_doc); buf_doc.seek(0)
