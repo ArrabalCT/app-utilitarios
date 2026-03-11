@@ -135,7 +135,6 @@ pecas_padrao = {
     "Teto": ["Teto", "Rack/Longarina"]
 }
 
-# --- 3. Constatações (CORRIGIDO PARA EVITAR CHAVES DUPLICADAS) ---
 regioes_detalhes = {}
 for regiao, lista in pecas_padrao.items():
     st.markdown(f"##### 🚗 {regiao}")
@@ -181,20 +180,17 @@ def montar_regiao(nome, dados):
     if not linhas: return ""
     return f"• {nome}: {'; '.join(linhas[:-1]) + ' e ' + linhas[-1] if len(linhas) > 1 else linhas[0]}.\n"
 
-# Forçando Maiúsculas para as variáveis principais do texto
 cat_str = cat_v.split(" ")[0].lower()
 marca_modelo_str = mod_v.upper() if mod_v else "[MARCA/MODELO]"
 placa_str = placa.upper() if placa else "[PLACA]"
 cor_str = cor.lower() if cor else "[COR]"
 
-# Texto contínuo: sem \n\n antes de "Nas inspeções..."
 txt_gerado = f"Trata-se de um veículo do tipo {tipo_v.lower()}, espécie {esp_v.lower()}, categoria {cat_str}, marca/modelo {marca_modelo_str}, de cor {cor_str}, ostentando a placa {placa_str}. "
 
 if any(regioes_detalhes.values()):
     txt_gerado += "Nas inspeções realizadas, constatou-se que a unidade apresentava avarias recentes localizadas nas seguintes regiões/peças:\n"
     for r, d in regioes_detalhes.items(): txt_gerado += montar_regiao(r, d)
 
-# Adicionando os Sistemas na mesma linha (separados por espaço em vez de \n)
 txt_gerado += f"Quanto aos sistemas elétricos, encontravam-se {s_ele.lower()}. "
 txt_gerado += f"O sistema de freios apresentou-se {s_fre.lower()}. "
 
@@ -211,7 +207,6 @@ else:
 if consideracoes:
     txt_gerado += f"\n\nConsiderações Adicionais: {consideracoes}"
 
-# Sincronização da Caixa Editável
 if st.session_state.get(f"track_{mk}") != txt_gerado:
     st.session_state[f"edit_{mk}"] = txt_gerado
     st.session_state[f"track_{mk}"] = txt_gerado
@@ -227,7 +222,8 @@ if foto:
     with colA:
         if st.button("✅ ACEITAR FOTO", type="primary", use_container_width=True):
             img = Image.open(io.BytesIO(foto.getvalue()))
-            st.session_state['fotos'].append({'img': ImageOps.exif_transpose(img)})
+            # Adicionado um "nome" provisório para a foto da câmera
+            st.session_state['fotos'].append({'img': ImageOps.exif_transpose(img), 'nome': f"cam_{st.session_state['camera_key']}"})
             st.session_state['camera_key'] += 1
             st.rerun()
     with colR:
@@ -237,17 +233,21 @@ if foto:
 
 fotos_up = st.file_uploader("Ou carregue da galeria", type=['jpg', 'jpeg', 'png'], accept_multiple_files=True, key=f"up_{mk}")
 if fotos_up:
+    # Verificação inteligente: pegamos os nomes das fotos que já subiram
+    nomes_existentes = [f.get('nome') for f in st.session_state['fotos'] if 'nome' in f]
+    
     for f in fotos_up:
-        img = Image.open(io.BytesIO(f.getvalue()))
-        st.session_state['fotos'].append({'img': ImageOps.exif_transpose(img)})
-    st.rerun()
+        # Só adiciona se o nome do arquivo AINDA NÃO estiver na lista
+        if f.name not in nomes_existentes:
+            img = Image.open(io.BytesIO(f.getvalue()))
+            st.session_state['fotos'].append({'img': ImageOps.exif_transpose(img), 'nome': f.name})
 
 if st.session_state['fotos']:
     st.markdown("### 📸 Fotos Anexadas")
     cols = st.columns(3)
     for i, foto_data in enumerate(st.session_state['fotos']):
         with cols[i % 3]:
-            st.image(foto_data['img'], use_column_width=True)
+            st.image(foto_data['img'], use_container_width=True)
             if st.button("❌ Apagar", key=f"del_{i}_{mk}", type="secondary"):
                 st.session_state['fotos'].pop(i)
                 st.rerun()
@@ -269,7 +269,6 @@ with c1:
         header = section.header
         for p in header.paragraphs: p.text = ""
         
-        # Ajustando a largura total da tabela para 15.5 cm para respeitar as margens
         table = header.add_table(rows=1, cols=3, width=Cm(15.5))
         table.autofit = False
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
